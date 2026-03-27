@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Campus Wi-Fi Sharing Platform</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+<div class="container">
+    <header>
+        <h1><span class="title-icon">📶</span><span class="title-text">Campus Wi-Fi Sharing Platform</span></h1>
+        <p class="subtitle">Share bandwidth · Earn Flow Currency · Save more with mutual aid</p>
+        <!-- Tips carousel -->
+        <div class="tips-bar">
+            <span class="tips-icon">💡</span>
+            <span id="tipText"></span>
+        </div>
+    </header>
+
+    <!-- Login / Register -->
+    <div id="authSection" class="card">
+        <div class="auth-tabs">
+            <button class="tab-btn active" onclick="showTab('login')">Login</button>
+            <button class="tab-btn" onclick="showTab('register')">Register</button>
+        </div>
+        <div id="loginTab" class="tab-content active">
+            <div class="form-group"><label>Username</label><input id="loginUsername" type="text" placeholder="Username"></div>
+            <div class="form-group"><label>Password</label><input id="loginPassword" type="password" placeholder="Password"></div>
+            <button class="btn btn-primary" onclick="login()">Login</button>
+        </div>
+        <div id="registerTab" class="tab-content">
+            <div class="form-group"><label>Username</label><input id="regUsername" type="text" placeholder="Username"></div>
+            <div class="form-group"><label>Password</label><input id="regPassword" type="password" placeholder="Password"></div>
+            <div class="form-group"><label>Email</label><input id="regEmail" type="email" placeholder="Email"></div>
+            <button class="btn btn-primary" onclick="register()">Register</button>
+        </div>
+    </div>
+
+    <!-- Dashboard -->
+    <div id="dashboard" style="display:none">
+
+        <!-- Newcomer guide tasks -->
+        <div id="newbieGuide" class="card newbie-guide" style="display:none">
+            <div class="guide-title">🎯 Newcomer Tasks <span class="guide-sub">Finish tasks to get started</span></div>
+            <div class="guide-steps">
+                <div class="guide-step" id="step1">
+                    <div class="step-icon">📤</div>
+                    <div class="step-body">
+                        <div class="step-name">Task 1: Share bandwidth</div>
+                        <div class="step-desc">Share any bandwidth to earn credit rewards immediately</div>
+                    </div>
+                    <div class="step-status" id="step1Status">Pending</div>
+                </div>
+                <div class="guide-step" id="step2">
+                    <div class="step-icon">📥</div>
+                    <div class="step-body">
+                        <div class="step-name">Task 2: Use bandwidth</div>
+                        <div class="step-desc">Make one bandwidth request to understand flow currency spending</div>
+                    </div>
+                    <div class="step-status" id="step2Status">Pending</div>
+                </div>
+                <div class="guide-step" id="step3">
+                    <div class="step-icon">🤝</div>
+                    <div class="step-body">
+                        <div class="step-name">Task 3: Join a mutual-aid group</div>
+                        <div class="step-desc">Team up with roommates; get an extra 8% discount when consuming</div>
+                    </div>
+                    <div class="step-status" id="step3Status">Pending</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- User status bar -->
+        <div class="card user-bar">
+            <div class="user-top">
+                <div class="user-avatar" id="userAvatar">🐬</div>
+                <div class="user-info">
+                    <div class="user-greeting">Welcome, <span id="usernameDisplay"></span></div>
+                    <div id="levelBadge" class="level-badge"></div>
+                    <div id="frozenBanner" class="frozen-banner" style="display:none">🔒 Account frozen</div>
+                </div>
+                <div id="newUserBadge" class="new-user-badge" style="display:none">🆕 New user protection period</div>
+            </div>
+
+            <!-- Warning bar -->
+            <div id="warningBar" class="warning-bar" style="display:none">
+                <span id="warningText"></span>
+                <span id="warningAction" class="warning-action"></span>
+            </div>
+
+            <div class="stats-grid">
+                <!-- Credit circular progress -->
+                <div class="stat-card stat-rep">
+                    <div class="rep-ring-wrap">
+                        <svg class="rep-ring" viewBox="0 0 80 80">
+                            <circle cx="40" cy="40" r="34" class="ring-bg"/>
+                            <circle cx="40" cy="40" r="34" class="ring-fill" id="repRingFill"/>
+                        </svg>
+                        <div class="rep-ring-val" id="reputationScore">-</div>
+                    </div>
+                    <div class="stat-label">Credit</div>
+                    <div class="stat-sub" id="reputationDesc">-</div>
+                </div>
+
+                <!-- Flow currency -->
+                <div class="stat-card">
+                    <div class="stat-value coin-val" id="virtualCurrency">-</div>
+                    <div class="stat-label">Flow Currency</div>
+                    <div class="stat-sub">Available balance</div>
+                </div>
+
+                <!-- Sharing ratio bar chart -->
+                <div class="stat-card">
+                    <div class="share-bar-wrap">
+                        <div class="share-bar-track">
+                            <div class="share-bar-fill" id="shareBarFill"></div>
+                        </div>
+                        <div class="share-bar-labels">
+                            <span>🤝 Share</span><span>📱 Use</span>
+                        </div>
+                    </div>
+                    <div class="stat-label">Sharing Ratio <span style="font-size:.7rem;color:#718096">(last 30 days)</span></div>
+                    <div class="stat-sub" id="contributionDesc">-</div>
+                </div>
+
+                <!-- Sharing gain -->
+                <div class="stat-card">
+                    <div class="stat-value gain-val" id="discountFactor">-</div>
+                    <div class="stat-label">Sharing Gain
+                        <span class="help-tip" title="Higher activity means more credit rewards for sharing, up to 2x">❓</span>
+                    </div>
+                    <div class="stat-sub">Current sharing reward multiplier</div>
+                </div>
+
+                <!-- Low-sharing warning counter -->
+                <div class="stat-card">
+                    <div class="stat-value warn-val" id="violationCount">-</div>
+                    <div class="stat-label">Low-sharing warnings</div>
+                    <div class="stat-sub" id="frozenStatus">Accumulated / 5 freezes</div>
+                </div>
+
+                <!-- Guarantee commission (shown when available) -->
+                <div class="stat-card" id="guarantorEarnedCard" style="display:none">
+                    <div class="stat-value" style="color:#f6ad55" id="guarantorEarned">-</div>
+                    <div class="stat-label">Guarantee Commission</div>
+                    <div class="stat-sub">Total earnings (coins)</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Feature tabs -->
+        <div class="card">
+            <div class="section-tabs">
+                <button class="stab active" onclick="showSection('bandwidth')">📶 Bandwidth Management</button>
+                <button class="stab" onclick="showSection('coalition')">🤝 Mutual-aid Groups</button>
+                <button class="stab" onclick="showSection('trust')">🔐 Trust Guarantee</button>
+                <button class="stab" onclick="showSection('leaderboard')">🏆 Leaderboard</button>
+            </div>
+
+            <!-- Bandwidth management -->
+            <div id="bandwidthSection" class="section active">
+                <!-- Bandwidth pool -->
+                <div class="pool-panel">
+                    <div class="pool-title">🌊 Available Bandwidth Pool</div>
+                    <div class="pool-visual">
+                        <div class="tank-wrap">
+                            <div class="tank">
+                                <div class="tank-water" id="tankWater">
+                                    <div class="wave"></div>
+                                </div>
+                                <div class="tank-label" id="tankLabel">-</div>
+                            </div>
+                            <div class="tank-desc">Total in pool</div>
+                        </div>
+                        <div class="pool-stats">
+                            <div class="pool-stat-row highlight">
+                                <span class="ps-label">Max requestable</span>
+                                <span class="ps-val" id="poolMaxRequest">-</span>
+                                <span class="ps-note">Only from others' contributions</span>
+                            </div>
+                            <div class="pool-stat-row muted">
+                                <span class="ps-label">Your contribution (not withdrawable)</span>
+                                <span class="ps-val" id="poolMyContrib">-</span>
+                                <span class="ps-note">Credited after others consume</span>
+                            </div>
+                            <div class="pool-stat-row">
+                                <span class="ps-label">Current price</span>
+                                <span class="ps-val" id="poolDynamicPrice">-</span>
+                                <span class="ps-note" id="poolDynamicPriceNote">-</span>
+                            </div>
+                            <div class="pool-stat-row">
+                                <span class="ps-label">Average reference</span>
+                                <span class="ps-val" id="poolAvgPrice">-</span>
+                                <span class="ps-note"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="two-col">
+                    <!-- Share bandwidth -->
+                    <div class="action-card">
+                        <h3>📤 Share Bandwidth</h3>
+                        <p class="hint">Share idle bandwidth to earn credit. When others consume your bandwidth, your flow currency arrives automatically.</p>
+                        <div class="form-group">
+                            <label>Share amount (MB)</label>
+                            <input id="shareAmount" type="range" min="10" max="1000" value="100" oninput="updateSharePreview()">
+                            <div class="range-val"><span id="shareAmountVal">100</span> MB</div>
+                        </div>
+                        <div class="form-group">
+                            <label><input id="isPeak" type="checkbox" onchange="updateSharePreview()">
+                                🔥 Peak-hour sharing (credit reward doubled)</label>
+                        </div>
+                        <div class="reward-preview" id="sharePreview">
+                            Estimated reward: <strong id="shareRepPreview">+10.0 Credit</strong>
+                            <span id="sharePeakTag" style="display:none" class="peak-tag">🔥 Peak x2</span><br>
+                            <span style="color:#718096;font-size:.8rem">Higher sharing gain multiplier means more credit rewards</span>
+                        </div>
+                        <button class="btn btn-success" onclick="shareBandwidth()">Share bandwidth</button>
+                    </div>
+
+                    <!-- Request bandwidth -->
+                    <div class="action-card">
+                        <h3>📥 Request Bandwidth</h3>
+                        <p class="hint">The higher your credit tier, the bigger your consumption discount. Mutual-aid members are matched first, with an extra 8% saving.</p>
+                        <div class="form-group">
+                            <label>Request amount (MB) (max <span id="availableBandwidth">-</span>)</label>
+                            <input id="requestAmount" type="number" min="10" value="50" oninput="updateCostPreview()">
+                        </div>
+                        <div class="discount-info" id="discountInfo">-</div>
+
+                        <!-- Cost preview card -->
+                        <div id="costPreview" class="cost-preview" style="display:none">
+                            <div class="preview-title">📋 This Request Preview</div>
+                            <div class="preview-main">
+                                <div class="preview-cost-big">
+                                    <span id="previewCost">-</span>
+                                    <span class="preview-coin">Flow Currency</span>
+                                </div>
+                                <div class="preview-rep-change">Credit <span id="previewRepBefore">-</span> → <span id="previewRepAfter">-</span></div>
+                            </div>
+                            <div class="preview-details">
+                                <div class="pd-row">
+                                    <span>Unit price</span><span id="previewPrice">-</span>
+                                </div>
+                                <div class="pd-row">
+                                    <span>Rejection risk</span>
+                                    <span id="previewRejectWrap">
+                                        <span class="risk-dot" id="riskDot"></span>
+                                        <span id="previewReject">-</span>
+                                    </span>
+                                </div>
+                            </div>
+                            <div id="previewExempt" class="preview-exempt" style="display:none">🆕 New user protection: no rejection or freezing, but price penalties still apply</div>
+                            <div id="previewLowShareWarn" class="preview-low-warn" style="display:none"></div>
+                        </div>
+                        <button class="btn btn-primary" onclick="requestBandwidth()">Request bandwidth</button>
+                    </div>
+                </div>
+
+                <!-- Bandwidth chart -->
+                <div class="chart-wrap">
+                    <canvas id="bandwidthChart"></canvas>
+                </div>
+
+                <!-- Advanced details -->
+                <details class="advanced-details">
+                    <summary>🔬 Advanced Details (Game-Theory Parameters)</summary>
+                    <div class="advanced-grid">
+                        <div><span class="adv-label">Discount factor δ</span><span id="advDelta">-</span></div>
+                        <div><span class="adv-label">Contribution ratio (30 days)</span><span id="advRatio">-</span></div>
+                        <div><span class="adv-label">Rejection probability</span><span id="advReject">-</span></div>
+                        <div><span class="adv-label">Dynamic base price</span><span id="advBasePrice">-</span></div>
+                    </div>
+                </details>
+            </div>
+
+            <!-- Mutual-aid groups (coalitions) -->
+            <div id="coalitionSection" class="section">
+                <div class="two-col">
+                    <div class="action-card">
+                        <h3>🏘️ Create a Mutual-aid Group</h3>
+                        <p class="hint">Team up with roommates/classmates. When consuming bandwidth, the system prioritizes matching members within your group and gives an extra 8% saving. Group benefits are allocated by each member's contribution ratio.</p>
+                        <div class="form-group">
+                            <label>Group name (e.g., Building 3)</label>
+                            <input id="coalitionName" type="text" placeholder="Mutual-aid group name">
+                        </div>
+                        <button class="btn btn-success" onclick="createCoalition()">Create mutual-aid group</button>
+                        <hr style="margin:20px 0">
+                        <h3>Join a Mutual-aid Group</h3>
+                        <div class="form-group">
+                            <label>Group ID</label>
+                            <input id="joinCoalitionId" type="number" placeholder="Group ID">
+                        </div>
+                        <button class="btn btn-primary" onclick="joinCoalition()">Join</button>
+                    </div>
+                    <div class="action-card">
+                        <h3>📊 Mutual-aid Group List</h3>
+                        <button class="btn btn-primary" onclick="loadCoalitions()" style="margin-bottom:15px">Refresh</button>
+                        <div id="coalitionList" class="scroll-list">Click refresh to view</div>
+                        <div id="myCoalitionDetail"></div>
+                        <div class="shapley-explain">
+                            💡 <strong>How allocation works:</strong> The total 8% discount saved from within-group mutual consumption is aggregated into a "group jackpot" and distributed proportionally to each member's contributed bandwidth.
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Trust guarantee -->
+            <div id="trustSection" class="section">
+                <div class="two-col">
+                    <div class="action-card">
+                        <h3>🔐 Trust Guarantee</h3>
+                        <p class="hint">Users with good credit can guarantee new users to help them get started quickly. For every consumption made by the guaranteed user, the guarantor automatically receives a 1% commission.</p>
+                        <div class="trust-rules">
+                            <div class="rule-item">🦅 Eagle (Credit >= 90): can guarantee, limit 200</div>
+                            <div class="rule-item">🐯 Tiger (Credit >= 70): can guarantee, limit 150</div>
+                            <div class="rule-item">🐬 Dolphin (Credit >= 50): normal rights, limit 100</div>
+                            <div class="rule-item">🐢 Turtle (Credit < 50): paused, limit 50</div>
+                        </div>
+                        <div class="form-group" style="margin-top:20px">
+                            <label>Guaranteed user ID</label>
+                            <input id="guaranteeUserId" type="number" placeholder="New user ID">
+                        </div>
+                        <button class="btn btn-success" onclick="guaranteeUser()">Guarantee user</button>
+                    </div>
+                    <div class="action-card">
+                        <h3>📋 Usage Rules</h3>
+                        <div class="penalty-table">
+                            <div class="penalty-row header"><span>Scenario</span><span>Impact</span></div>
+                            <div class="penalty-row"><span>Normal consumption</span><span>Credit decreases slightly (-0.05/MB)</span></div>
+                            <div class="penalty-row"><span>Low sharing ratio (&lt;20%)</span><span>Consumption price +50%</span></div>
+                            <div class="penalty-row"><span>Very low sharing ratio (&lt;10%)</span><span>Price +100%; you may be rejected</span></div>
+                            <div class="penalty-row"><span>Persistent low sharing (5 accumulated)</span><span>Account frozen for 3 days</span></div>
+                            <div class="penalty-row"><span>Credit below 50</span><span>Paused; share bandwidth first</span></div>
+                            <div class="penalty-row good"><span>New users (within 7 days)</span><span>✅ Protection: no rejection/freezing, but price penalties still apply</span></div>
+                        </div>
+                        <div id="myTrustInfo" class="trust-info" style="margin-top:20px"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Leaderboard -->
+            <div id="leaderboardSection" class="section">
+                <div class="lb-header">
+                    <div class="lb-tags-legend">
+                        <span class="lb-tag-demo top">🏅 Top 10% get an extra 5% discount</span>
+                        <span class="lb-tag-demo star">⭐ Sharing Star</span>
+                        <span class="lb-tag-demo helper">🤝 Mutual-aid Expert</span>
+                    </div>
+                </div>
+                <div id="leaderboardList" class="scroll-list">Loading...</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- How it works (friendly version) -->
+    <div class="card info-section">
+        <h3>💡 How does it work?</h3>
+        <div class="info-grid">
+            <div class="info-card">
+                <h4>📤 Share bandwidth → Earn credit</h4>
+                <p>Share idle bandwidth to earn credit immediately. The higher your credit, the bigger your consumption discount (up to 30% off). Share during peak hours to double your credit rewards.</p>
+            </div>
+            <div class="info-card">
+                <h4>💰 When others consume → Earn flow currency</h4>
+                <p>When others use your shared bandwidth, your flow currency arrives in real time. Use flow currency to request bandwidth and create a good incentive loop.</p>
+            </div>
+            <div class="info-card">
+                <h4>🤝 Team up → Save more</h4>
+                <p>Form a mutual-aid group with roommates. When consuming, the system matches group members first and gives an extra 8% saving. The saved costs inside the group are distributed by contribution ratio.</p>
+            </div>
+            <div class="info-card">
+                <h4>⚖️ Share more to use more</h4>
+                <p>The system tracks your sharing ratio over the last 30 days. If you only use without sharing, the price will rise and you may be rejected. New users have a 7-day protection period.</p>
+            </div>
+            <div class="info-card">
+                <h4>🔐 Guarantee users to earn commission</h4>
+                <p>Users with good credit can guarantee newcomers to help them get started quickly. For every consumption made by the guaranteed user, you automatically receive a 1% commission.</p>
+            </div>
+        </div>
+
+        <!-- Game-theory principles (advanced) -->
+        <details class="advanced-details" style="margin-top:20px">
+            <summary>🔬 Game-Theory Principles (Geek Mode)</summary>
+            <div class="info-grid" style="margin-top:16px">
+                <div class="info-card"><h4>Repeated game</h4><p>Long-term accounts turn a one-shot game into an infinitely repeated game. The discount factor δ = 0.5 + 0.005 × credit + 0.1 × recent sharing rate makes cooperation a rational equilibrium strategy.</p></div>
+                <div class="info-card"><h4>Reputation mechanism</h4><p>Credit scores address information asymmetry and form a separating equilibrium: high-credit users get discounts, while low-credit users are isolated—encouraging truthful behavior.</p></div>
+                <div class="info-card"><h4>Coalition game</h4><p>Shapley values fairly distribute coalition benefits based on marginal contributions: φᵢ = Σ (|S|!(n-|S|-1)!/n!) × [v(S∪{i}) - v(S)], preventing free-riding inside coalitions.</p></div>
+                <div class="info-card"><h4>Mechanism design</h4><p>Dynamic pricing (bandwidth scarce +10% / abundant -10%) + linear rejection probability (0% contribution ratio => 100% rejection) + wash-trading detection achieve incentive compatibility.</p></div>
+            </div>
+        </details>
+    </div>
+
+    <footer><p>Campus Wi-Fi Sharing Platform | Game-Theory Based Bandwidth Incentives | Python + FastAPI</p></footer>
+</div>
+<script src="/static/script.js"></script>
+</body>
+</html>
